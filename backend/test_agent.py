@@ -50,67 +50,43 @@ order_tool = {
 }
 
 
-messages = [
-    {
-        "role": "user",
-        "content": "Where is my order ORD-101?"
-    }
-]
+def run_agent(user_message: str):
 
+    messages = [
+        {
+            "role": "user",
+            "content": user_message
+        }
+    ]
 
-# --------------------------------------------------
-# Step 1: Ask the model whether a tool is needed
-# --------------------------------------------------
+    # First LLM call
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=messages,
+        tools=[order_tool],
+        tool_choice="auto"
+    )
 
-response = client.chat.completions.create(
-    model="openai/gpt-oss-120b",
-    messages=messages,
-    tools=[order_tool],
-    tool_choice="auto"
-)
+    message = response.choices[0].message
 
-
-message = response.choices[0].message
-
-print("MODEL REQUEST:")
-print(messages[0]["content"])
-
-
-# --------------------------------------------------
-# Step 2: Check whether the model requested a tool
-# --------------------------------------------------
-
-if message.tool_calls:
-
-    print("\nTOOL CALL DETECTED")
+    # No tool needed
+    if not message.tool_calls:
+        return message.content
 
     # Add the assistant's tool-call message
     messages.append(message)
 
+    # Execute requested tools
     for tool_call in message.tool_calls:
 
         function_name = tool_call.function.name
         arguments = json.loads(tool_call.function.arguments)
-
-        print(f"Function: {function_name}")
-        print(f"Arguments: {arguments}")
-
-        # --------------------------------------------------
-        # Step 3: Execute our actual Python function
-        # --------------------------------------------------
 
         if function_name == "get_order_details":
 
             order_id = arguments["order_id"]
 
             result = get_order_details(order_id)
-
-            print("\nTOOL RESULT:")
-            print(result)
-
-            # --------------------------------------------------
-            # Step 4: Send the tool result back to the model
-            # --------------------------------------------------
 
             messages.append(
                 {
@@ -120,23 +96,32 @@ if message.tool_calls:
                 }
             )
 
-
-    # --------------------------------------------------
-    # Step 5: Ask the model for the final answer
-    # --------------------------------------------------
-
+    # Second LLM call
     final_response = client.chat.completions.create(
         model="openai/gpt-oss-120b",
         messages=messages,
         tools=[order_tool]
     )
 
-    final_message = final_response.choices[0].message
+    return final_response.choices[0].message.content
 
-    print("\nFINAL AI RESPONSE:")
-    print(final_message.content)
 
-else:
+if __name__ == "__main__":
 
-    print("\nFINAL AI RESPONSE:")
-    print(message.content)
+    test_questions = [
+        "Where is my order ORD-101?",
+        "Can I cancel order ORD-103?",
+        "Where is my order ORD-999?",
+        "Where is my order?"
+    ]
+
+    for question in test_questions:
+
+        print("\n" + "=" * 60)
+        print("CUSTOMER:")
+        print(question)
+
+        answer = run_agent(question)
+
+        print("\nAURA AI:")
+        print(answer)
