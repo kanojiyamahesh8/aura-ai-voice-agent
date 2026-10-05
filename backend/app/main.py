@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from app.orders import get_order_details
+from app.agent import run_agent
 
 
 app = FastAPI(
@@ -32,6 +33,14 @@ class OrderResponse(BaseModel):
     cancellation_eligible: Optional[bool] = None
 
 
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1)
+
+
+class ChatResponse(BaseModel):
+    response: str
+
+
 @app.get("/health")
 def health_check():
     return {
@@ -51,3 +60,13 @@ def order_details(request: OrderRequest):
         )
 
     return order
+
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(request: ChatRequest):
+
+    response = run_agent(request.message)
+
+    return {
+        "response": response
+    }
