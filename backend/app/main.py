@@ -1,5 +1,7 @@
+from typing import Optional
+
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.orders import get_order_details
 
@@ -12,7 +14,22 @@ app = FastAPI(
 
 
 class OrderRequest(BaseModel):
+    order_id: str = Field(min_length=1)
+
+
+class OrderResponse(BaseModel):
     order_id: str
+    customer: str
+    product: str
+    value: int
+    status: str
+
+    carrier: Optional[str] = None
+    tracking: Optional[str] = None
+    expected: Optional[str] = None
+    delivered: Optional[str] = None
+    ordered: Optional[str] = None
+    cancellation_eligible: Optional[bool] = None
 
 
 @app.get("/health")
@@ -22,7 +39,7 @@ def health_check():
     }
 
 
-@app.post("/orders/details")
+@app.post("/orders/details", response_model=OrderResponse)
 def order_details(request: OrderRequest):
 
     order = get_order_details(request.order_id)
