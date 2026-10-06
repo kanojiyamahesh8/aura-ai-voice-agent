@@ -157,3 +157,54 @@ function updateStatus(message) {
     statusElement.textContent = message;
 
 }
+
+// ------------------------------------------------------------
+// Load and display Aura Skincare orders
+// ------------------------------------------------------------
+function createOrderCard(orderId, order) {
+
+    const orderCard = document.createElement("div");
+    orderCard.className = "order-card";
+
+    orderCard.innerHTML = `
+        <h3>${orderId}</h3>
+        <p><strong>Customer:</strong> ${order.customer}</p>
+        <p><strong>Product:</strong> ${order.product}</p>
+        <p><strong>Value:</strong> ₹${order.value}</p>
+        <p><strong>Status:</strong> ${order.status}</p>
+    `;
+
+    return orderCard;
+}
+
+
+async function loadOrders() {
+
+    try {
+
+        const response = await fetch("/orders");
+
+        if (!response.ok) {
+            throw new Error("Could not load orders.");
+        }
+
+        const orders = await response.json();
+
+        const ordersContainer = document.getElementById("orders-container");
+
+        ordersContainer.innerHTML = "";
+
+        for (const [orderId, order] of Object.entries(orders)) {
+            ordersContainer.appendChild(createOrderCard(orderId, order));
+        }
+
+    } catch (error) {
+
+        console.error("Order loading error:", error);
+
+        document.getElementById("orders-container").textContent =
+            "Unable to load test orders.";
+    }
+}
+
+loadOrders();
