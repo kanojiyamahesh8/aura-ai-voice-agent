@@ -5,6 +5,14 @@ from pathlib import Path
 ORDERS_FILE = Path(__file__).parent.parent / "data" / "orders.json"
 
 
+def get_all_orders():
+    """
+    Retrieve all Aura Skincare orders.
+    """
+    with open(ORDERS_FILE, "r", encoding="utf-8") as file:
+        return json.load(file)
+
+
 def get_order_details(order_id: str):
     """
     Retrieve order details using an order ID.

@@ -8,7 +8,7 @@ from livekit import api
 
 from pydantic import BaseModel, Field
 
-from app.orders import get_order_details
+from app.orders import get_all_orders, get_order_details
 from app.agent import run_agent
 
 from pathlib import Path
@@ -57,6 +57,11 @@ def health_check():
     return {
         "status": "ok"
     }
+
+
+@app.get("/orders")
+def get_orders():
+    return get_all_orders()
 
 
 @app.post("/orders/details", response_model=OrderResponse)
