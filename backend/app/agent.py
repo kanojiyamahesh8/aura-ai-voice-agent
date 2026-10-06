@@ -1,3 +1,64 @@
+# ============================================================
+# AURA AI — TEXT-BASED AGENT (FOUNDATION / PROTOTYPE)
+# ============================================================
+#
+# This module represents the initial text-based version of
+# the Aura customer support agent.
+#
+# It was developed first to establish and validate the core
+# AI architecture before introducing realtime voice.
+#
+# Core flow:
+#
+#     Customer text
+#          ↓
+#     Groq LLM
+#          ↓
+#     Tool calling
+#          ↓
+#     get_order_details()
+#          ↓
+#     orders.json
+#          ↓
+#     Order information returned to LLM
+#          ↓
+#     Natural-language response
+#
+# This implementation established:
+#
+# - LLM integration with Groq
+# - Function/tool calling
+# - Order lookup business logic
+# - Missing-order handling
+# - Separation between the LLM and order data
+#
+# This file is intentionally retained as the text-based
+# foundation of the project.
+#
+# The realtime voice implementation is developed separately in:
+#
+#     ../voice_agent.py
+#
+# The voice agent reuses the same order lookup logic while
+# adding realtime speech capabilities:
+#
+#     User voice
+#          ↓
+#        STT
+#          ↓
+#        LLM
+#          ↓
+#     Order lookup tool
+#          ↓
+#        TTS
+#          ↓
+#     Spoken response
+#
+# Keeping this module separate makes the evolution of the
+# project clear and prevents the voice layer from replacing
+# the original working text-based architecture.
+# ============================================================
+
 import json
 import os
 
