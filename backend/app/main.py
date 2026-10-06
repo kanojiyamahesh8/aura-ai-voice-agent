@@ -1,10 +1,21 @@
+import os
+
 from typing import Optional
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from livekit import api
+
 from pydantic import BaseModel, Field
 
 from app.orders import get_order_details
 from app.agent import run_agent
+
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
+
+load_dotenv(".env.local")
 
 
 app = FastAPI(
@@ -70,3 +81,64 @@ def chat(request: ChatRequest):
     return {
         "response": response
     }
+
+
+@app.get("/token")
+async def get_livekit_token():
+
+    api_key = os.getenv("LIVEKIT_API_KEY")
+    api_secret = os.getenv("LIVEKIT_API_SECRET")
+    livekit_url = os.getenv("LIVEKIT_URL")
+
+    if not api_key or not api_secret or not livekit_url:
+        raise HTTPException(
+            status_code=500,
+            detail="LiveKit environment variables are not configured."
+        )
+
+    room_name = "aura-room"
+    agent_name = "aura-ai"
+
+    # --------------------------------------------------------
+    # Create a LiveKit access token for the customer
+    # --------------------------------------------------------
+
+    token = (
+        api.AccessToken(api_key, api_secret)
+        .with_identity("customer")
+        .with_grants(
+            api.VideoGrants(
+                room_join=True,
+                room=room_name
+            )
+        )
+        .to_jwt()
+    )
+
+    # --------------------------------------------------------
+    # Explicitly dispatch the Aura AI agent to the room
+    # --------------------------------------------------------
+
+    async with api.LiveKitAPI() as lkapi:
+
+        await lkapi.agent_dispatch.create_dispatch(
+            api.CreateAgentDispatchRequest(
+                agent_name=agent_name,
+                room=room_name
+            )
+        )
+
+    return {
+        "token": token,
+        "url": livekit_url,
+        "room": room_name
+    }
+    
+# Serve the frontend
+FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
+
+app.mount(
+    "/",
+    StaticFiles(directory=FRONTEND_DIR, html=True),
+    name="frontend"
+)
